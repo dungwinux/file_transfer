@@ -4,7 +4,59 @@ void main() {
   runApp(MyApp());
 }
 
+class MyTabbedPage extends StatefulWidget {
+  const MyTabbedPage({ Key key }) : super(key: key);
+  @override
+  _MyTabbedPageState createState() => _MyTabbedPageState();
+}
+
+class _MyTabbedPageState extends State<MyTabbedPage> with SingleTickerProviderStateMixin {
+  final List<Tab> myTabs = <Tab>[
+    Tab(text: 'LEFT'),
+    Tab(text: 'RIGHT'),
+  ];
+
+  TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(vsync: this, length: myTabs.length);
+  }
+
+ @override
+ void dispose() {
+   _tabController.dispose();
+   super.dispose();
+ }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        bottom: TabBar(
+          controller: _tabController,
+          tabs: myTabs,
+        ),
+      ),
+      body: TabBarView(
+        controller: _tabController,
+        children: myTabs.map((Tab tab) {
+          final String label = tab.text.toLowerCase();
+          return Center(
+            child: Text(
+              'This is the $label tab',
+              style: const TextStyle(fontSize: 36),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
 class MyApp extends StatelessWidget {
+  MyApp({Key key}) : super(key: key);
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
@@ -22,7 +74,7 @@ class MyApp extends StatelessWidget {
         // is not restarted.
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(title: 'Flutter Demo Home Page'),
+      home: MyHomePage(title: 'Transfer list'),
     );
   }
 }
@@ -47,7 +99,8 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
-
+  var items = List<String>.generate(10000, (i) => "Item $i");
+  int currentTab = 1;
   void _incrementCounter() {
     setState(() {
       // This call to setState tells the Flutter framework that something has
@@ -61,53 +114,83 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headline4,
-            ),
-          ],
+    return DefaultTabController(
+      length: 2,
+      child: Builder(
+        builder: (BuildContext context) {
+        final TabController tabController = DefaultTabController.of(context);
+        tabController.addListener(() {
+          if (tabController.indexIsChanging) {
+            setState(() {
+            if(tabController.index == 0)
+            {
+              floatingActionButton: FloatingActionButton(
+              onPressed: _incrementCounter,
+              tooltip: 'Add',
+              child: Icon(Icons.add),
+              );
+            }
+            else
+            {
+              floatingActionButton: FloatingActionButton(
+              onPressed: _incrementCounter,
+              tooltip: 'Download',
+              child: Icon(Icons.download_rounded),
+              ); 
+            }
+            });
+          }
+        });
+        return Scaffold(
+        appBar: AppBar(
+          title: Text(widget.title),
+          centerTitle: true,
+          bottom: TabBar(tabs: [
+            Tab(
+                child: Text(
+              'Send',
+            )),
+            Tab(
+                child: Text(
+              'Receive',
+            ))
+          ]),
         ),
+        body: TabBarView(children: [
+          ListView.builder(
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text('${items[index]}'),
+                );
+              }),
+          ListView.builder(
+              itemCount: items.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  title: Text('${items[index]}'),
+                );
+              }),
+        ]),
+        floatingActionButton: Builder(builder: (context) {
+            final index = DefaultTabController.of(context).index;
+            if (index == 0)
+              return FloatingActionButton(
+                onPressed: _incrementCounter,
+                tooltip: 'Add',
+                child: Icon(Icons.add),
+              );
+            else
+              return FloatingActionButton(
+                onPressed: _incrementCounter,
+                tooltip: 'Download',
+                child: Icon(Icons.download_rounded),
+              );
+          }),
+      );
+      }
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: Icon(Icons.add),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 }
+
