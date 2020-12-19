@@ -145,7 +145,7 @@ abstract class Connector {
 }
 
 class ActiveConnector extends Connector {
-  final String host = 'localhost';
+  String host = 'localhost';
   final int port = 1234;
   ActiveConnector() {
     var handler = webSocketHandler((webSocket) {
@@ -154,6 +154,7 @@ class ActiveConnector extends Connector {
     });
 
     shelf_io.serve(handler, host, port).then((server) {
+      host = server.address.host;
       print('Serving at ws://${server.address.host}:${server.port}');
     });
   }
