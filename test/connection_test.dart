@@ -1,25 +1,25 @@
+import 'package:cross_file/cross_file.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shelf/shelf_io.dart' as shelf_io;
-import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:file_transfer/control/connection.dart';
 
 void main() async {
   // Setup ws server
-  var handler = webSocketHandler((webSocket) {
-    webSocket.stream.listen((message) {
-      webSocket.sink.add("echo $message");
-    });
+  var handler = ActiveConnector();
+  var _ = PassiveConnector("ws://localhost:1234");
+
+  var fileList = [File("a.txt", await XFile("test/a.txt").readAsBytes())];
+
+  test("Send list", () async {
+    handler.sendList(fileList);
+    await Future.delayed(Duration(milliseconds: 100));
+    expect(_.receiveList, fileList.cast<FileView>());
   });
 
-  shelf_io.serve(handler, 'localhost', 1234).then((server) {
-    print('Serving at ws://${server.address.host}:${server.port}');
+  test("Send file", () async {
+    handler.sendList(fileList);
+    await Future.delayed(Duration(milliseconds: 100));
+    var file = await _.requestFile(_.receiveList.first);
+    expect(file.data, fileList.first.data);
   });
-  var link = Uri.parse("ws://localhost:1234");
-  var _ = await setupConnection(link);
-
-  test("Send data", () async {
-    _.sink.add("test");
-    var a = await _.stream.first;
-    expect(a, "echo test");
-  });
+  // TODO: add more test cases
 }
