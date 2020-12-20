@@ -33,7 +33,7 @@ dependencies:
   shelf_web_socket: ^0.2.3
   qr_flutter: ^3.2.0
   cross_file: ^0.1.0
-  file_selector: ^0.7.0
+  file_picker_cross: ^4.2.6
   path: ^1.7.0
   universal_platform: ^0.1.3
 

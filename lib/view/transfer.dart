@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:file_selector/file_selector.dart';
+import 'package:file_picker_cross/file_picker_cross.dart';
 import 'package:file_transfer/control/connection.dart';
 
 class TransferPage extends StatefulWidget {
@@ -31,8 +31,8 @@ class _TransferPageState extends State<TransferPage> {
   Timer _updateReceive;
 
   void _selectFile() async {
-    final file = await openFile();
-    widget.connector.sendList([File(file.name, await file.readAsBytes())]);
+    final file = await FilePickerCross.importFromStorage();
+    widget.connector.sendList([File(file.fileName, file.toUint8List())]);
     await Future.delayed(Duration(milliseconds: 500));
     setState(() {
       broadcast = widget.connector.fileList;
