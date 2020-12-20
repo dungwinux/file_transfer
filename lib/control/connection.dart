@@ -40,7 +40,7 @@ class FileView {
     if (other is FileView) {
       return other.hash == _hash && other.name == _name;
     } else {
-      throw null;
+      return null;
     }
   }
 
@@ -111,8 +111,10 @@ abstract class Connector {
         receiveList = msg.content;
       else if (msg.type == TransferType.file) {
         if (msg.data == null) {
-          sendFile(fileList
-              .singleWhere((FileView element) => element == msg.content.first));
+          var _file = fileList.singleWhere(
+              (FileView element) => element == msg.content.first,
+              orElse: () => null);
+          if (_file != null) sendFile(_file);
         } else {
           var _file = msg.content.first;
           XFile.fromData(msg.data, name: msg.content.first._name)
