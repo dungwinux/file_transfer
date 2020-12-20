@@ -31,8 +31,9 @@ class _TransferPageState extends State<TransferPage> {
   Timer _updateReceive;
 
   void _selectFile() async {
-    final file = await FilePickerCross.importFromStorage();
-    widget.connector.sendList([File(file.fileName, file.toUint8List())]);
+    final files = await FilePickerCross.importMultipleFromStorage();
+    widget.connector.sendList(
+        files.map((file) => File(file.fileName, file.toUint8List())).toList());
     await Future.delayed(Duration(milliseconds: 500));
     setState(() {
       broadcast = widget.connector.fileList;
