@@ -167,7 +167,11 @@ class ActiveConnector extends Connector {
     });
 
     shelf_io.serve(handler, InternetAddress.anyIPv4, port).then((server) async {
-      host = (await WifiInfo().getWifiIP()) ?? server.address.toString();
+      if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
+        host = await WifiInfo().getWifiIP();
+      } else {
+        host = server.address.toString();
+      }
       port = server.port;
       print('Serving at $address');
       isReady = true;
