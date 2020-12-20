@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:file_transfer/control/connection.dart';
 import 'package:file_transfer/view/transfer.dart';
 import 'package:flutter/material.dart';
@@ -14,8 +16,6 @@ class Pairing extends StatelessWidget {
         context: context,
         builder: (context) => isPassive ? PassivePairing() : ActivePairing(),
       );
-      print(connector?.isReady);
-
       if (connector != null)
         Navigator.of(context).push(
           MaterialPageRoute(
@@ -60,12 +60,28 @@ class ActivePairing extends StatefulWidget {
 
 class _ActivePairingState extends State<ActivePairing> {
   ActiveConnector _connector = ActiveConnector();
-  bool _isReady;
+  bool _isReady = false;
+  Timer _update;
 
   _reload() {
     setState(() {
       _isReady = _connector.isReady;
+      if (_isReady) _update.cancel();
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _update = Timer.periodic(Duration(microseconds: 500), (timer) {
+      _reload();
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _update.cancel();
   }
 
   @override
@@ -73,12 +89,9 @@ class _ActivePairingState extends State<ActivePairing> {
     return Container(
       child: Scaffold(
         body: _isReady
-            ? FlatButton(
-                onPressed: _reload(),
-                child: Text("Reload"),
-              )
-            : Center(
+            ? Center(
                 child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     QrImage(data: _connector.address, size: 200),
                     Text(_connector.address),
@@ -89,7 +102,8 @@ class _ActivePairingState extends State<ActivePairing> {
                     )
                   ],
                 ),
-              ),
+              )
+            : CircularProgressIndicator(),
       ),
     );
   }

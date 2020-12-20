@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
@@ -106,8 +107,8 @@ abstract class Connector {
   List<FileView> receiveList = [];
   Map<FileView, String> saveLocations = Map();
 
-  void subscribe() {
-    socket.stream.listen(
+  StreamSubscription<dynamic> subscribe() {
+    return socket.stream.listen(
       (event) {
         var msg = TransferEvent.fromJson(jsonDecode(event as String));
         if (msg.type == TransferType.list)
@@ -126,7 +127,7 @@ abstract class Connector {
         }
         print(msg);
       },
-      onDone: close,
+      // onDone: close,
     );
   }
 
@@ -155,7 +156,7 @@ abstract class Connector {
 }
 
 class ActiveConnector extends Connector {
-  int port = 10000 + Random.secure().nextInt(55536);
+  int port = 0;
   String host = 'localhost';
   String get address => 'ws://${host}:${port}';
   ActiveConnector() {
@@ -165,7 +166,7 @@ class ActiveConnector extends Connector {
     });
 
     shelf_io.serve(handler, host, port).then((server) {
-      host = server.address.address;
+      host = server.address.host;
       port = server.port;
       print('Serving at $address');
       isReady = true;
@@ -175,8 +176,10 @@ class ActiveConnector extends Connector {
 
 class PassiveConnector extends Connector {
   PassiveConnector(String link) {
-    socket = WebSocketChannel.connect(Uri.parse(link));
-    subscribe();
     isReady = true;
+    socket = WebSocketChannel.connect(Uri.parse(link));
+    subscribe().onError((err) {
+      isReady = false;
+    });
   }
 }

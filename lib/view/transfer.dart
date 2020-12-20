@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:file_selector/file_selector.dart';
 import 'package:file_transfer/control/connection.dart';
 
 class TransferPage extends StatefulWidget {
@@ -22,14 +25,39 @@ class TransferPage extends StatefulWidget {
 
 class _TransferPageState extends State<TransferPage> {
   int currentTab = 1;
-  void _incrementCounter() {
-    setState(() {});
+  List<FileView> receive = [];
+  List<FileView> broadcast = [];
+  bool isReady = true;
+  Timer _updateReceive;
+
+  void _selectFile() async {
+    final file = await openFile();
+    widget.connector.sendList([File(file.name, await file.readAsBytes())]);
+    await Future.delayed(Duration(milliseconds: 500));
+    setState(() {
+      broadcast = widget.connector.fileList;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _updateReceive = Timer.periodic(Duration(seconds: 2), (timer) {
+      setState(() {
+        receive = widget.connector.receiveList;
+        isReady = widget.connector.isReady;
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _updateReceive.cancel();
   }
 
   @override
   Widget build(BuildContext context) {
-    var receive = widget.connector.receiveList;
-    var broadcast = widget.connector.fileList;
     return DefaultTabController(
       length: 2,
       child: Builder(builder: (BuildContext context) {
@@ -45,6 +73,9 @@ class _TransferPageState extends State<TransferPage> {
           appBar: AppBar(
             title: Text(widget.title),
             centerTitle: true,
+            actions: [
+              FlatButton(onPressed: null, child: Text('Online: $isReady')),
+            ],
             bottom: TabBar(
               tabs: [
                 Tab(child: Text('Send')),
@@ -74,7 +105,7 @@ class _TransferPageState extends State<TransferPage> {
           ),
           floatingActionButton: (DefaultTabController.of(context).index == 0)
               ? FloatingActionButton(
-                  onPressed: _incrementCounter,
+                  onPressed: _selectFile,
                   tooltip: 'Add',
                   child: Icon(Icons.add),
                 )
