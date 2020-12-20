@@ -1,11 +1,11 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:cross_file/cross_file.dart';
 import 'package:path/path.dart' as path;
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
-import 'package:web_socket_channel/status.dart' as status;
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class File extends FileView {
@@ -101,6 +101,7 @@ class TransferEvent {
 abstract class Connector {
   WebSocketChannel socket;
   // TODO: handle status
+  bool isReady = false;
   List<File> fileList = [];
   List<FileView> receiveList = [];
   Map<FileView, String> saveLocations = Map();
@@ -149,12 +150,14 @@ abstract class Connector {
 
   void close() async {
     socket.sink.close();
+    isReady = false;
   }
 }
 
 class ActiveConnector extends Connector {
+  int port = 10000 + Random.secure().nextInt(55536);
   String host = 'localhost';
-  final int port = 1234;
+  String get address => 'ws://${host}:${port}';
   ActiveConnector() {
     var handler = webSocketHandler((webSocket) {
       socket = webSocket;
@@ -162,8 +165,10 @@ class ActiveConnector extends Connector {
     });
 
     shelf_io.serve(handler, host, port).then((server) {
-      host = server.address.host;
-      print('Serving at ws://${server.address.address}:${server.port}');
+      host = server.address.address;
+      port = server.port;
+      print('Serving at $address');
+      isReady = true;
     });
   }
 }
@@ -172,5 +177,6 @@ class PassiveConnector extends Connector {
   PassiveConnector(String link) {
     socket = WebSocketChannel.connect(Uri.parse(link));
     subscribe();
+    isReady = true;
   }
 }
