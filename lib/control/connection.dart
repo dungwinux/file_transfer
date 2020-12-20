@@ -5,6 +5,7 @@ import 'package:cross_file/cross_file.dart';
 import 'package:path/path.dart' as path;
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
+import 'package:web_socket_channel/status.dart' as status;
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class File extends FileView {
@@ -105,24 +106,27 @@ abstract class Connector {
   Map<FileView, String> saveLocations = Map();
 
   void subscribe() {
-    socket.stream.asBroadcastStream().listen((event) {
-      var msg = TransferEvent.fromJson(jsonDecode(event as String));
-      if (msg.type == TransferType.list)
-        receiveList = msg.content;
-      else if (msg.type == TransferType.file) {
-        if (msg.data == null) {
-          var _file = fileList.singleWhere(
-              (FileView element) => element == msg.content.first,
-              orElse: () => null);
-          if (_file != null) sendFile(_file);
-        } else {
-          var _file = msg.content.first;
-          XFile.fromData(msg.data, name: msg.content.first._name)
-              .saveTo(saveLocations.remove(_file));
+    socket.stream.listen(
+      (event) {
+        var msg = TransferEvent.fromJson(jsonDecode(event as String));
+        if (msg.type == TransferType.list)
+          receiveList = msg.content;
+        else if (msg.type == TransferType.file) {
+          if (msg.data == null) {
+            var _file = fileList.singleWhere(
+                (FileView element) => element == msg.content.first,
+                orElse: () => null);
+            if (_file != null) sendFile(_file);
+          } else {
+            var _file = msg.content.first;
+            XFile.fromData(msg.data, name: msg.content.first._name)
+                .saveTo(saveLocations.remove(_file));
+          }
         }
-      }
-      print(msg);
-    });
+        print(msg);
+      },
+      onDone: close,
+    );
   }
 
   void sendList([List<File> additionals = const []]) {
@@ -141,6 +145,10 @@ abstract class Connector {
     var send = TransferEvent(TransferType.file, [file], data: file.data);
 
     socket.sink.add(jsonEncode(send));
+  }
+
+  void close() async {
+    socket.sink.close();
   }
 }
 
