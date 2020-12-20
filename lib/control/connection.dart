@@ -1,12 +1,15 @@
+import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:cross_file/cross_file.dart';
 import 'package:path/path.dart' as path;
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
-import 'package:web_socket_channel/status.dart' as status;
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:wifi_info_flutter/wifi_info_flutter.dart';
+import 'package:file_picker_cross/file_picker_cross.dart';
 
 class File extends FileView {
   Uint8List data;
@@ -82,7 +85,7 @@ class TransferEvent {
       return FileView(fileInfo[0], fileInfo[1]);
     }).toList();
     if (type == TransferType.file) assert(content.length == 1);
-    if (msg["data"] != null) data = base64.decode(msg["data"]);
+    if (msg["data"] != null) data = base64.decode(msg["data"] as String);
   }
 
   Map<String, dynamic> toJson() => {
@@ -101,12 +104,13 @@ class TransferEvent {
 abstract class Connector {
   WebSocketChannel socket;
   // TODO: handle status
+  bool isReady = false;
   List<File> fileList = [];
   List<FileView> receiveList = [];
   Map<FileView, String> saveLocations = Map();
 
-  void subscribe() {
-    socket.stream.listen(
+  StreamSubscription<dynamic> subscribe() {
+    return socket.stream.listen(
       (event) {
         var msg = TransferEvent.fromJson(jsonDecode(event as String));
         if (msg.type == TransferType.list)
@@ -114,18 +118,25 @@ abstract class Connector {
         else if (msg.type == TransferType.file) {
           if (msg.data == null) {
             var _file = fileList.singleWhere(
-                (FileView element) => element == msg.content.first,
-                orElse: () => null);
+              (FileView element) => element == msg.content.first,
+              orElse: () => null,
+            );
             if (_file != null) sendFile(_file);
           } else {
             var _file = msg.content.first;
-            XFile.fromData(msg.data, name: msg.content.first._name)
-                .saveTo(saveLocations.remove(_file));
+            var loc = saveLocations.remove(_file);
+            if (loc == null) {
+              print(msg.data);
+              FilePickerCross(msg.data, path: msg.content.first._name)
+                  .exportToStorage();
+            } else {
+              XFile.fromData(msg.data, name: msg.content.first._name)
+                  .saveTo(loc);
+            }
           }
         }
-        print(msg);
       },
-      onDone: close,
+      // onDone: close,
     );
   }
 
@@ -135,9 +146,11 @@ abstract class Connector {
     socket.sink.add(jsonEncode(send));
   }
 
-  Future<void> requestFile(FileView file, String saveDir) async {
+  Future<void> requestFile(FileView file) async {
+    String saveDir;
     var send = TransferEvent(TransferType.file, [file]);
-    saveLocations[file] = path.join(saveDir, file.name);
+    saveLocations[file] =
+        saveDir == null ? null : path.join(saveDir, file.name);
     socket.sink.add(jsonEncode(send));
   }
 
@@ -149,28 +162,39 @@ abstract class Connector {
 
   void close() async {
     socket.sink.close();
+    isReady = false;
   }
 }
 
 class ActiveConnector extends Connector {
-  String host = 'localhost';
-  final int port = 1234;
+  int port = 0;
+  String host = '';
+  String get address => 'ws://${host}:${port}';
   ActiveConnector() {
     var handler = webSocketHandler((webSocket) {
       socket = webSocket;
       subscribe();
     });
 
-    shelf_io.serve(handler, host, port).then((server) {
-      host = server.address.host;
-      print('Serving at ws://${server.address.address}:${server.port}');
+    shelf_io.serve(handler, InternetAddress.anyIPv4, port).then((server) async {
+      if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
+        host = await WifiInfo().getWifiIP();
+      } else {
+        host = server.address.toString();
+      }
+      port = server.port;
+      print('Serving at $address');
+      isReady = true;
     });
   }
 }
 
 class PassiveConnector extends Connector {
   PassiveConnector(String link) {
+    isReady = true;
     socket = WebSocketChannel.connect(Uri.parse(link));
-    subscribe();
+    subscribe().onError((err) {
+      isReady = false;
+    });
   }
 }
