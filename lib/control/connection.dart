@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:cross_file/cross_file.dart';
@@ -8,6 +8,7 @@ import 'package:path/path.dart' as path;
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'package:wifi_info_flutter/wifi_info_flutter.dart';
 
 class File extends FileView {
   Uint8List data;
@@ -157,7 +158,7 @@ abstract class Connector {
 
 class ActiveConnector extends Connector {
   int port = 0;
-  String host = 'localhost';
+  String host = '';
   String get address => 'ws://${host}:${port}';
   ActiveConnector() {
     var handler = webSocketHandler((webSocket) {
@@ -165,8 +166,8 @@ class ActiveConnector extends Connector {
       subscribe();
     });
 
-    shelf_io.serve(handler, host, port).then((server) {
-      host = server.address.address;
+    shelf_io.serve(handler, InternetAddress.anyIPv4, port).then((server) async {
+      host = (await WifiInfo().getWifiIP()) ?? server.address.toString();
       port = server.port;
       print('Serving at $address');
       isReady = true;
