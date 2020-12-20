@@ -166,7 +166,7 @@ class ActiveConnector extends Connector {
     });
 
     shelf_io.serve(handler, host, port).then((server) {
-      host = server.address.host;
+      host = server.address.address;
       port = server.port;
       print('Serving at $address');
       isReady = true;
