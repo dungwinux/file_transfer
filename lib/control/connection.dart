@@ -126,7 +126,6 @@ abstract class Connector {
             var _file = msg.content.first;
             var loc = saveLocations.remove(_file);
             if (loc == null) {
-              print(msg.data);
               FilePickerCross(msg.data, path: msg.content.first._name)
                   .exportToStorage();
             } else {

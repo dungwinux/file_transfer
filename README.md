@@ -1,16 +1,23 @@
-# file_transfer
+# The Link
 
-A new Flutter project.
+It is 2020, but tasks like direct file transfer is still a problem. The Link represents our aim to create an app that will allow any 2 devices regardless of the platform can connect and transfer files directly without the need for a medium.
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+This project is a Flutter application.
 
-A few resources to get you started if this is your first Flutter project:
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+To test, run:
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```
+flutter run -d <device>
+```
+
+
+To build, run:
+
+```
+flutter build <target>
+```
+
+To run in release mode, add `--release` in run command

@@ -20,7 +20,7 @@ void main() async {
   test("Send file", () async {
     handler.sendList(fileList);
     await Future.delayed(Duration(milliseconds: 100));
-    await _.requestFile(_.receiveList.first, "test");
+    await _.requestFile(_.receiveList.first);
     await Future.delayed(Duration(milliseconds: 200));
     var received = XFile("test/a.txt");
     expect(fileList.first.data, await received.readAsBytes());
