@@ -31,9 +31,12 @@ class _TransferPageState extends State<TransferPage> {
   Timer _updateReceive;
 
   void _selectFile() async {
-    final files = await FilePickerCross.importMultipleFromStorage();
-    widget.connector.sendList(
-        files.map((file) => File(file.fileName, file.toUint8List())).toList());
+    try {
+      final files = await FilePickerCross.importMultipleFromStorage();
+      widget.connector.sendList(files
+          .map((file) => File(file.fileName, file.toUint8List()))
+          .toList());
+    } catch (e) {}
     await Future.delayed(Duration(milliseconds: 500));
     setState(() {
       broadcast = widget.connector.fileList;
@@ -99,6 +102,11 @@ class _TransferPageState extends State<TransferPage> {
                 itemBuilder: (context, index) {
                   return ListTile(
                     title: Text('${receive[index]}'),
+                    trailing: IconButton(
+                      icon: Icon(Icons.download_rounded),
+                      onPressed: () =>
+                          widget.connector.requestFile(receive[index]),
+                    ),
                   );
                 },
               ),

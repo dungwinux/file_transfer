@@ -9,6 +9,7 @@ import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:wifi_info_flutter/wifi_info_flutter.dart';
+import 'package:file_picker_cross/file_picker_cross.dart';
 
 class File extends FileView {
   Uint8List data;
@@ -84,7 +85,7 @@ class TransferEvent {
       return FileView(fileInfo[0], fileInfo[1]);
     }).toList();
     if (type == TransferType.file) assert(content.length == 1);
-    if (msg["data"] != null) data = base64.decode(msg["data"]);
+    if (msg["data"] != null) data = base64.decode(msg["data"] as String);
   }
 
   Map<String, dynamic> toJson() => {
@@ -117,16 +118,23 @@ abstract class Connector {
         else if (msg.type == TransferType.file) {
           if (msg.data == null) {
             var _file = fileList.singleWhere(
-                (FileView element) => element == msg.content.first,
-                orElse: () => null);
+              (FileView element) => element == msg.content.first,
+              orElse: () => null,
+            );
             if (_file != null) sendFile(_file);
           } else {
             var _file = msg.content.first;
-            XFile.fromData(msg.data, name: msg.content.first._name)
-                .saveTo(saveLocations.remove(_file));
+            var loc = saveLocations.remove(_file);
+            if (loc == null) {
+              print(msg.data);
+              FilePickerCross(msg.data, path: msg.content.first._name)
+                  .exportToStorage();
+            } else {
+              XFile.fromData(msg.data, name: msg.content.first._name)
+                  .saveTo(loc);
+            }
           }
         }
-        print(msg);
       },
       // onDone: close,
     );
@@ -138,9 +146,11 @@ abstract class Connector {
     socket.sink.add(jsonEncode(send));
   }
 
-  Future<void> requestFile(FileView file, String saveDir) async {
+  Future<void> requestFile(FileView file) async {
+    String saveDir;
     var send = TransferEvent(TransferType.file, [file]);
-    saveLocations[file] = path.join(saveDir, file.name);
+    saveLocations[file] =
+        saveDir == null ? null : path.join(saveDir, file.name);
     socket.sink.add(jsonEncode(send));
   }
 

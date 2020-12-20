@@ -116,9 +116,11 @@ packages:
   file_picker_cross:
     dependency: "direct main"
     description:
-      name: file_picker_cross
-      url: "https://pub.dartlang.org"
-    source: hosted
+      path: "."
+      ref: HEAD
+      resolved-ref: b495c5159b7ae38aba6086c4824488dabce6d498
+      url: "https://gitlab.com/testapp-system/file_picker_cross.git"
+    source: git
     version: "4.2.6"
   flutter:
     dependency: "direct main"
