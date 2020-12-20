@@ -1,15 +1,14 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:cross_file/cross_file.dart';
+import 'package:path/path.dart' as path;
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_web_socket/shelf_web_socket.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-import 'package:web_socket_channel/status.dart' as status;
-import 'package:cross_file/cross_file.dart';
 
 class File extends FileView {
   Uint8List data;
-  String source;
   File(String name, this.data) : super(name, data.hashCode.toString());
   // TODO: replace better hash
 }
@@ -62,7 +61,8 @@ class TransferEvent {
   List<FileView> content;
   Uint8List data;
 
-  TransferEvent(this.type, this.content, {this.data});
+  TransferEvent(this.type, this.content, {this.data})
+      : assert(type != null && content != null);
 
   TransferEvent.fromJson(Map<String, dynamic> msg) {
     assert(msg != null);
@@ -102,15 +102,22 @@ abstract class Connector {
   // TODO: handle status
   List<File> fileList = [];
   List<FileView> receiveList = [];
+  Map<FileView, String> saveLocations = Map();
 
   void subscribe() {
     socket.stream.asBroadcastStream().listen((event) {
       var msg = TransferEvent.fromJson(jsonDecode(event as String));
       if (msg.type == TransferType.list)
         receiveList = msg.content;
-      else if (msg.type == TransferType.file && msg.data == null) {
-        sendFile(fileList
-            .singleWhere((FileView element) => element == msg.content.first));
+      else if (msg.type == TransferType.file) {
+        if (msg.data == null) {
+          sendFile(fileList
+              .singleWhere((FileView element) => element == msg.content.first));
+        } else {
+          var _file = msg.content.first;
+          XFile.fromData(msg.data, name: msg.content.first._name)
+              .saveTo(saveLocations.remove(_file));
+        }
       }
       print(msg);
     });
@@ -122,23 +129,14 @@ abstract class Connector {
     socket.sink.add(jsonEncode(send));
   }
 
-  Future<File> requestFile(FileView file) async {
+  Future<void> requestFile(FileView file, String saveDir) async {
     var send = TransferEvent(TransferType.file, [file]);
+    saveLocations[file] = path.join(saveDir, file.name);
     socket.sink.add(jsonEncode(send));
-    var res = await socket.stream
-        .map((event) => TransferEvent.fromJson(jsonDecode(event as String)))
-        .firstWhere((element) =>
-            element.type == TransferType.file &&
-            element.content == [file] &&
-            element.data != null);
-    return File(res.content.first.name, res.data);
   }
 
   void sendFile(File file) async {
-    final _file = XFile(file.source);
-    final _fileContent = await _file.readAsBytes();
-
-    var send = TransferEvent(TransferType.file, [file], data: _fileContent);
+    var send = TransferEvent(TransferType.file, [file], data: file.data);
 
     socket.sink.add(jsonEncode(send));
   }
@@ -155,7 +153,7 @@ class ActiveConnector extends Connector {
 
     shelf_io.serve(handler, host, port).then((server) {
       host = server.address.host;
-      print('Serving at ws://${server.address.host}:${server.port}');
+      print('Serving at ws://${server.address.address}:${server.port}');
     });
   }
 }
