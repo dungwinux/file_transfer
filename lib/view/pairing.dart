@@ -29,19 +29,36 @@ class Pairing extends StatelessWidget {
     return Container(
       child: Scaffold(
         appBar: AppBar(
-          title: Text("Pairing"),
+          title: Text("Welcome to File Transfer"),
+          centerTitle: true,
         ),
-        body: Center(
-          child: Column(
+        body: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: MediaQuery.of(context).size.width * 0.35,
+          ),
+          child: Flex(
+            direction: Axis.vertical,
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              FlatButton(
-                onPressed:
-                    UniversalPlatform.isWeb ? null : () => _openDialog(false),
-                child: Text("Become host"),
+              Tooltip(
+                message: "Create a connection",
+                waitDuration: Duration(milliseconds: 700),
+                child: ElevatedButton.icon(
+                  onPressed:
+                      UniversalPlatform.isWeb ? null : () => _openDialog(false),
+                  label: Text("Initiate"),
+                  icon: Icon(Icons.cast),
+                ),
               ),
-              FlatButton(
-                onPressed: () => _openDialog(true),
-                child: Text("Become client"),
+              Tooltip(
+                message: "Connect to other",
+                waitDuration: Duration(milliseconds: 700),
+                child: ElevatedButton.icon(
+                  onPressed: () => _openDialog(true),
+                  label: Text("Connect"),
+                  icon: Icon(Icons.connect_without_contact),
+                ),
               ),
             ],
           ),
@@ -129,18 +146,35 @@ class _PassivePairingState extends State<PassivePairing> {
     super.dispose();
   }
 
+  void _submit(String value) async {
+    // TODO: Check for valid address
+    Navigator.pop<Connector>(context, PassiveConnector(value));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
       child: Scaffold(
         body: Center(
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               TextField(
+                decoration: InputDecoration(
+                  labelText: 'Peer address',
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      Icons.qr_code,
+                    ),
+                    onPressed: () => null,
+                  ),
+                ),
                 maxLines: 1,
-                onSubmitted: (String value) async {
-                  Navigator.pop<Connector>(context, PassiveConnector(value));
-                },
+                onSubmitted: _submit,
+              ),
+              FlatButton(
+                onPressed: () => null,
+                child: Text("Submit"),
               )
             ],
           ),
