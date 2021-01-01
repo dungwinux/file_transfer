@@ -173,7 +173,7 @@ class _PassivePairingState extends State<PassivePairing> {
                 onSubmitted: _submit,
               ),
               FlatButton(
-                onPressed: () => null,
+                onPressed: () => _submit(_controller.text),
                 child: Text("Submit"),
               )
             ],
