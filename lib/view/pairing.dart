@@ -98,7 +98,6 @@ class _ActivePairingState extends State<ActivePairing> {
   @override
   void dispose() {
     _update.cancel();
-    _connector.close();
     super.dispose();
   }
 

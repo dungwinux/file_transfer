@@ -57,6 +57,7 @@ class _TransferPageState extends State<TransferPage> {
   @override
   void dispose() {
     super.dispose();
+    widget.connector.close();
     _updateReceive.cancel();
   }
 
