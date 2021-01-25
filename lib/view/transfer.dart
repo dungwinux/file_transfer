@@ -109,10 +109,15 @@ class _TransferPageState extends State<TransferPage> {
                 itemBuilder: (context, index) {
                   return ListTile(
                     title: Text('${receive[index]}'),
-                    trailing: IconButton(
-                      icon: Icon(Icons.download_rounded),
-                      onPressed: () =>
-                          widget.connector.requestFile(receive[index]),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: Icon(Icons.download_rounded),
+                          onPressed: () =>
+                              widget.connector.requestFile(receive[index]),
+                        ),
+                      ],
                     ),
                   );
                 },
