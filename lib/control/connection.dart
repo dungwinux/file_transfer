@@ -166,9 +166,9 @@ abstract class Connector {
 }
 
 class ActiveConnector extends Connector {
-  int port = 0;
+  int port = 6001;
   String host = '';
-  String get address => 'ws://${host}:${port}';
+  String get address => 'ws://$host:$port';
   ActiveConnector() {
     var handler = webSocketHandler((webSocket) {
       socket = webSocket;
