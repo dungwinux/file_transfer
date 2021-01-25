@@ -171,22 +171,31 @@ class ActiveConnector extends Connector {
   int port = 6001;
   String host = '';
   String get address => 'ws://$host:$port';
+
+  HttpServer _server;
   ActiveConnector() {
+    initServer();
+  }
+
+  void initServer() async {
     var handler = webSocketHandler((webSocket) {
       socket = webSocket;
       subscribe();
     });
+    _server = await shelf_io.serve(handler, InternetAddress.anyIPv4, port);
+    if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
+      host = await WifiInfo().getWifiIP();
+    } else {
+      host = _server.address.toString();
+    }
+    port = _server.port;
+    print('ActiveConnector: Serving at $address');
+    isReady = true;
+  }
 
-    shelf_io.serve(handler, InternetAddress.anyIPv4, port).then((server) async {
-      if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
-        host = await WifiInfo().getWifiIP();
-      } else {
-        host = server.address.toString();
-      }
-      port = server.port;
-      print('Serving at $address');
-      isReady = true;
-    });
+  void close() async {
+    _server?.close();
+    super.close();
   }
 }
 
