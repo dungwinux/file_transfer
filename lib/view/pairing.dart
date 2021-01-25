@@ -134,12 +134,7 @@ class PassivePairing extends StatefulWidget {
 }
 
 class _PassivePairingState extends State<PassivePairing> {
-  TextEditingController _controller;
-
-  void initState() {
-    super.initState();
-    _controller = TextEditingController();
-  }
+  TextEditingController _controller = TextEditingController();
 
   void dispose() {
     _controller.dispose();
@@ -171,6 +166,7 @@ class _PassivePairingState extends State<PassivePairing> {
                 ),
                 maxLines: 1,
                 onSubmitted: _submit,
+                controller: _controller,
               ),
               FlatButton(
                 onPressed: () => _submit(_controller.text),
