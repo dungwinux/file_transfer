@@ -108,6 +108,7 @@ abstract class Connector {
   List<File> fileList = [];
   List<FileView> receiveList = [];
   Map<FileView, String> saveLocations = Map();
+  String get address;
 
   StreamSubscription<dynamic> subscribe() {
     return socket.stream.listen(
@@ -148,6 +149,7 @@ abstract class Connector {
   Future<void> requestFile(FileView file) async {
     String saveDir;
     var send = TransferEvent(TransferType.file, [file]);
+    // TODO: Get download location. Currently, it just dumps temporary
     saveLocations[file] =
         saveDir == null ? null : path.join(saveDir, file.name);
     socket.sink.add(jsonEncode(send));
@@ -189,7 +191,9 @@ class ActiveConnector extends Connector {
 }
 
 class PassiveConnector extends Connector {
-  PassiveConnector(String link) {
+  String link;
+  String get address => link;
+  PassiveConnector(this.link) {
     isReady = true;
     socket = WebSocketChannel.connect(Uri.parse(link));
     subscribe().onError((err) {
