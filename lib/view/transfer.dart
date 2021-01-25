@@ -78,7 +78,7 @@ class _TransferPageState extends State<TransferPage> {
             title: Text(widget.title),
             centerTitle: true,
             actions: [
-              FlatButton(onPressed: null, child: Text('Online: $isReady')),
+              TextButton(onPressed: null, child: Text('Online: $isReady')),
             ],
             bottom: TabBar(
               tabs: [

@@ -112,7 +112,7 @@ class _ActivePairingState extends State<ActivePairing> {
                   children: [
                     QrImage(data: _connector.address, size: 200),
                     Text(_connector.address),
-                    FlatButton(
+                    TextButton(
                       onPressed: () =>
                           Navigator.pop<Connector>(context, _connector),
                       child: Text("Ready !"),
@@ -168,7 +168,7 @@ class _PassivePairingState extends State<PassivePairing> {
                 onSubmitted: _submit,
                 controller: _controller,
               ),
-              FlatButton(
+              TextButton(
                 onPressed: () => _submit(_controller.text),
                 child: Text("Submit"),
               )
